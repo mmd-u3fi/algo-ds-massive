@@ -17,6 +17,7 @@ impl <K, V> HashTable<K, V>
             array: table,
         }
     }
+
     pub fn insert(&mut self, key: K, value: V) -> Result<(), HashTableErrors>{
         let index = (self.hash_function)(&key);
         if index > self.array.capacity() {
@@ -39,53 +40,44 @@ impl <K, V> HashTable<K, V>
             },
         };
     }
+
     fn collision_resolution(&self, index: usize) -> Result<usize, HashTableErrors>{
-        for i in index..self.array.capacity(){
-            match self.array[i] {
-                None => {return Ok(i as usize)},
-                Some(_) => continue,
+        for (index, item) in self.array.iter().enumerate().skip(index){
+            match item {
+                None => {return Ok(index as usize)},
+                _ => continue,
             };
         }
         for i in 0..index {
             match self.array[i] {
                 None => {return Ok(i as usize)},
-                Some(_) => continue,
+                _ => continue,
             };
         }
         Err(HashTableErrors::IsFull)
     }
-    fn lookup(&self, key: K) -> Option<&V> {
+
+    pub fn lookup(&self, key: K) -> Option<&V> {
         let index = (self.hash_function)(&key);
-        match &self.array[index] {
-            None => {return None},
-            Some(x) if x.key == key => {
-                return Some(&self.array[index].as_ref().unwrap().value);
-            },
-            Some(x) => {
-                for i in index..self.array.capacity(){
-                    match &self.array[i] {
-                        None => {},
-                        Some(x) if x.key == key => {
-                            return Some(&self.array[i].as_ref().unwrap().value);
-                        },
-                        Some(_) => {},
-                    };
-                }
-                for i in 0..index {
-                    match &self.array[i] {
-                        None => {},
-                        Some(x) if x.key == key => {
-                            return Some(&self.array[i].as_ref().unwrap().value);
-                        },
-                        Some(_) => {},
-                    };
-                }
-                return None;
-            }
-        };
+        for (index, item) in self.array.iter().enumerate().skip(index){
+            match item {
+                Some(x) if x.key == key => {
+                    return Some(&self.array[index].as_ref().unwrap().value);
+                },
+                _ => {},
+            };
+        }
+        for (index, item) in self.array.iter().enumerate() {
+            match item {
+                Some(x) if x.key == key => {
+                    return Some(&self.array[index].as_ref().unwrap().value);
+                },
+                _ => {},
+            };
+        }
+        None
     }
 }
-
 pub enum HashTableErrors{
     IsFull,
     HashFunctionRange,
